@@ -965,5 +965,52 @@ if(!location.hash) location.hash = "#/dashboard";
 route();
 
 </script>
+<!-- Firebase Cloud Synchronization Engine -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0BNoWridFIfYYPX2zh...",
+    authDomain: "gestion-de-stock-88820.firebaseapp.com",
+    projectId: "gestion-de-stock-88820",
+    storageBucket: "gestion-de-stock-88820.appspot.com",
+    messagingSenderId: "234281414590",
+    appId: "1:234281414590:web:f7d11c...",
+    measurementId: "G-G798MLB5V2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const docRef = doc(db, "app_data", "main_db");
+
+  // إعادة تعريف saveDB لتشمل الحفظ السحابي تلقائياً
+  const originalSaveDB = window.saveDB;
+  window.saveDB = function() {
+    if (typeof originalSaveDB === 'function') originalSaveDB();
+    setDoc(docRef, DB).catch(err => console.error("Cloud sync error:", err));
+  };
+
+  // المزامنة اللحظية مع الأجهزة الأخرى
+  let initialLoad = true;
+  onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const cloudData = docSnap.data();
+      if (JSON.stringify(cloudData) !== JSON.stringify(DB)) {
+        DB = cloudData;
+        localStorage.setItem("gestion_db", JSON.stringify(DB));
+        if (!initialLoad) {
+          toast("Mise à jour des données en direct...", "info");
+          route();
+        }
+      }
+    } else {
+      setDoc(docRef, DB);
+    }
+    initialLoad = false;
+  });
+</script>
 </body>
 </html>
+
+
